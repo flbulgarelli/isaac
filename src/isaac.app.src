@@ -1,0 +1,12 @@
+{application, isaac,
+ [
+  {description, ""},
+  {vsn, "1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib
+                 ]},
+  {mod, { isaac_app, []}},
+  {env, []}
+ ]}.
