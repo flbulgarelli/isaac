@@ -2,8 +2,9 @@
 
 -compile(export_all).
 
-simple({PositiveVotesCount, ElectorsCount}) ->
-  PositiveVotesCount > ElectorsCount / 2 + 1.
+simple() ->
+  fun({PositiveVotesCount, ElectorsCount}) ->
+    PositiveVotesCount > ElectorsCount / 2 + 1 end.
 
 ratio(PositiveVotesRatio) ->
  fun({PositiveVotesCount, ElectorsCount}) ->
