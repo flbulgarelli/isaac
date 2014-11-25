@@ -1,6 +1,12 @@
 -module(race_topic).
 
--compile(export_all).
+-export([start_link/1,
+  subscribe/2,
+  unsubscribe/2,
+  propose/2,
+  vote_for/3,
+  status/1,
+  init/1 ]).
 
 start_link(Spec) ->
   spawn_link(?MODULE, init, [Spec]).
