@@ -3,33 +3,33 @@
 -include_lib("eunit/include/eunit.hrl").
 
 workflow_test() ->
-  Topic = simple_topic:start_link({ majority:simple(), 900 }),
+  {ok, Topic} = simple_topic:start_link({ majority:simple(), 900 }),
   simple_topic:subscribe(self(), Topic),
   ProposalRef = simple_topic:propose({}, Topic),
   receive
-    {ProposalRef, propose, _ } -> ok
+    {propose, _, ProposalRef } -> ok
   after 500 ->
     ?assert(false)
   end,
   simple_topic:vote_for(self(), ProposalRef, Topic),
   receive
-    {ProposalRef, won} -> ok
+    {won, ProposalRef} -> ok
   after 2000 ->
     ?assert(false)
   end.
 
 topic_start_idle_test() ->
-  Topic = simple_topic:start_link({ majority:simple(), 100 }),
+  {ok, Topic} = simple_topic:start_link({ majority:simple(), 100 }),
   ?assertEqual(idle, simple_topic:status(Topic)).
 
 topic_becomes_voting_with_proposal_test() ->
-  Topic = simple_topic:start_link({ majority:simple(), 100 }),
+  {ok, Topic} = simple_topic:start_link({ majority:simple(), 100 }),
   simple_topic:subscribe(self(), Topic),
   simple_topic:propose({}, Topic),
   ?assertEqual(voting, simple_topic:status(Topic)).
 
 topic_becomes_idle_after_voting_test() ->
-  Topic = simple_topic:start_link({ majority:simple(), 100 }),
+  {ok, Topic} = simple_topic:start_link({ majority:simple(), 100 }),
   simple_topic:subscribe(self(), Topic),
   simple_topic:propose({}, Topic),
   timer:sleep(200),
