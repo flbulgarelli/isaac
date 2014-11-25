@@ -46,10 +46,10 @@ idle(S={Spec={_, VotingTimeout}, Subscribers}) ->
     M = {Ref, propose, _} ->
       notify_proposal(M, Subscribers),
       timer:send_after(VotingTimeout, self(), timeout),
-      running({Spec, Subscribers, new_votes_by_proposal(Ref)})
+      running({Spec, Subscribers, init_votes_by_proposal(Ref)})
   end.
 
-running(S = {Spec={MajorityModel, _}, Subscribers, VotesByProposal}) ->
+running(S = {Spec={MajorityModel, VotingTimeout}, Subscribers, VotesByProposal}) ->
   receive
     {Pid, Ref, status} ->
       Pid ! {Ref, running},
@@ -59,7 +59,7 @@ running(S = {Spec={MajorityModel, _}, Subscribers, VotesByProposal}) ->
     M = {OtherProposalRef, propose, _} ->
       notify_proposal(M, Subscribers),
       timer:send_after(VotingTimeout, self(), timeout),
-      running({Spec, Subscribers, add_proposal(OtherProposalRef, VotesByProposal)})
+      running({Spec, Subscribers, add_proposal(OtherProposalRef, VotesByProposal)});
     timeout ->
       notify_result(MajorityModel, VotesByProposal, Subscribers),
       idle({Spec, Subscribers})
@@ -76,7 +76,7 @@ add_vote_for(Elector, ProposalRef, VotesByProposal) ->
   dict:store(ProposalRef, dict:store(Elector, 1, Votes)).
 
 votes_count(VotesByProposal) ->
-  dict:map(fun(Proposal, Votes) ->
+  dict:map(fun(_, Votes) ->
     dict:fold(fun(_, V, A) -> V + A end, 0, Votes) end, VotesByProposal).
 
 notify_result(MajorityModel, VotesByProposal, Subscribers) ->
