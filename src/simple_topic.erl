@@ -1,6 +1,9 @@
 -module(simple_topic).
 -behaviour(gen_fsm).
 
+-record(idle, {spec, subscribers}).
+-record(voting, {spec, subscribers, proposal_ref, votes}).
+
 -export([start_link/1,
   subscribe/2,
   unsubscribe/2,
@@ -15,7 +18,7 @@ start_link(Spec) ->
   gen_fsm:start_link(?MODULE, [Spec], []).
 
 init([Spec]) ->
-  {ok, idle, {Spec, []}}.
+  {ok, idle, #idle{spec=Spec, subscribers=[]}}.
 
 status(Topic) ->
   gen_fsm:sync_send_event(Topic, status, 500).
@@ -37,28 +40,29 @@ vote_for(Elector, ProposalRef, Topic) ->
 idle(status, _, S) ->
   {reply, idle, idle, S}.
 
-idle({subscribe, Subscriber}, {Spec, Subscribers}) ->
-  {next_state, idle, {Spec, [Subscriber|Subscribers]}};
+idle({subscribe, Sub}, S = #idle{subscribers=Subs}) ->
+  {next_state, idle, S#idle{subscribers=[Sub|Subs]}};
 
-idle({unsubscribe, Subscriber}, {Spec, Subscribers}) ->
-  {next_state, idle, {Spec, lists:delete(Subscriber, Subscribers)}};
+idle({unsubscribe, Sub}, S = #idle{subscribers = Subs}) ->
+  {next_state, idle, S#idle{subscribers=lists:delete(Sub, Subs)}};
 
-idle(M = {propose, _, ProposalRef}, {Spec={_, VotingTimeout}, Subscribers}) ->
-  notify_proposal(M, Subscribers),
-  gen_fsm:send_event_after(VotingTimeout, timeout),
-  {next_state, voting, {Spec, Subscribers, ProposalRef, dict:new()}}.
-
+idle(M = {propose, _, ProposalRef}, {idle, Spec={_, Timeout}, Subs}) ->
+  notify_proposal(M, Subs),
+  gen_fsm:send_event_after(Timeout, timeout),
+  {next_state, voting, {voting, Spec, Subs, ProposalRef, dict:new()}}.
 
 
 voting(status, _, S) ->
   {reply, voting, voting, S}.
 
-voting({vote_for, Elector, ProposalRef}, {Spec, Subscribers, ProposalRef, Votes}) ->
-  {next_state, voting, {Spec, Subscribers, ProposalRef, dict:store(Elector, 1, Votes)}};
+voting({vote_for, Elector, ProposalRef}, S = #voting{votes = Votes}) ->
+  {next_state, voting, S#voting{votes = dict:store(Elector, 1, Votes)}};
 
-voting(timeout, {Spec={MajorityModel, _}, Subscribers, ProposalRef, Votes}) ->
+voting(timeout, {voting, Spec={MajorityModel, _}, Subscribers, ProposalRef, Votes}) ->
   notify_result(ProposalRef, MajorityModel, Votes, Subscribers),
   {next_state, idle, {Spec, Subscribers}}.
+
+terminate(_, _, _) -> ok.
 
 
 votes_count(Votes) ->
@@ -77,4 +81,4 @@ proposal_approved(MajorityModel, Votes, Subscribers) ->
   MajorityModel({votes_count(Votes), length(Subscribers)}).
 
 
-terminate(_, _, _) -> ok.
+
