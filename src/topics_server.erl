@@ -8,8 +8,10 @@
   list_topics/0,
   start_topic/1,
   get_topic_status/1,
-  start_topic_proposal/2
- %% subscribe_to_topic/2, unsubscribe_to_topic/2
+  start_topic_proposal/2,
+  vote_for_proposal/3,
+  subscribe_to_topic/2,
+  unsubscribe_to_topic/2
 ]).
 
 -export([init/1, handle_call/3  ]).
@@ -29,6 +31,16 @@ start_topic(Spec) ->
 start_topic_proposal(Proposal, TopicRef) ->
   gen_server:call(topics_server, {start_topic_proposal, Proposal, TopicRef}, 100).
 
+subscribe_to_topic(Subscriber, TopicRef)->
+  gen_server:call(topics_server, {subscribe_to_topic, Subscriber, TopicRef}, 100).
+
+unsubscribe_to_topic(Subscriber, TopicRef)->
+  gen_server:cast(topics_server, {unsubscribe_to_topic, Subscriber, TopicRef}).
+
+
+vote_for_proposal(Elector, ProposalRef, TopicRef) ->
+  gen_server:cast(topics_server, {vote_for_proposal, Elector, ProposalRef, TopicRef}).
+
 init(_) ->
   {ok, #state{topics=dict:new(), proposal_counter=0, topic_counter=0}}.
 
@@ -41,6 +53,7 @@ handle_call({get_topic_status, TopicRef}, _, S) ->
     _ -> {reply, error, S}
   end;
 
+%%TODO add topic to supervisor hierarchy
 handle_call({start_topic, Spec}, _, S = #state{topics=Ts}) ->
   TopicRef = S#state.topic_counter + 1,
   Topic = simple_topic:start_link(Spec),

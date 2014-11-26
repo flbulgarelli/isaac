@@ -33,11 +33,21 @@ handle('POST',[<<"topics">>, TopicRef, <<"proposals">>], _Req) ->
       {proposal_id, ProposalRef}
     ]})};
 
+handle('POST',[<<"topics">>, TopicRef, <<"proposals">>, ProposalRef, <<"votes">>], _Req) ->
+    topics_server:vote_for_proposal(null, ProposalRef, TopicRef),
+    {ok, [], <<>>};
+
+% TODO get from session/token
 handle('POST',[<<"topics">>, TopicRef, <<"subscribers">>], _Req) ->
-    {ok, [], <<"TODO: add subscriber">>};
+    SubscriberId = topics_server:subscribe_to_topic(null, TopicRef),
+    {ok, [], jiffy:encode({[
+      {topic_id, TopicRef},
+      {subscriber_id, SubscriberId}
+    ]})};
 
 handle('DELETE',[<<"topics">>, TopicRef, <<"subscribers">>, SubscriberId], _Req) ->
-    {ok, [], <<"TODO: remove subscriber">>};
+    topics_server:unsubscribe_to_topic(null, TopicRef),
+    {ok, [], <<>>};
 
 
 handle(_, _, _Req) ->
