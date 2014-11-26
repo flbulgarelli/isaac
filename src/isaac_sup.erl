@@ -17,10 +17,18 @@ start_link() ->
 init([]) ->
     ElliOpts = [{callback, isaac_api_callback}, {port, 4949}],
     ElliSpec = {
-        fancy_http,
+        isaac_http,
         {elli, start_link, [ElliOpts]},
         permanent,
         5000,
         worker,
         [elli]},
-    {ok, { {one_for_one, 5, 10}, [ElliSpec]} }.
+    TopicsServerSpec = {
+        topics_server,
+        {topics_server, start_link, []},
+        permanent,
+        brutal_kill,
+        worker,
+        [topics_server]
+    },
+    {ok, { {one_for_one, 5, 10}, [ElliSpec, TopicsServerSpec]} }.

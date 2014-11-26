@@ -8,6 +8,7 @@
   subscribe/2,
   unsubscribe/2,
   propose/2,
+  propose/3,
   vote_for/3,
   status/1,
   init/1 ]).
@@ -30,9 +31,12 @@ unsubscribe(Subscriber, Topic) ->
   gen_fsm:send_event(Topic, {unsubscribe, Subscriber}).
 
 propose(Proposal, Topic) ->
-  ProposalRef = make_ref(),
-  gen_fsm:send_event(Topic, {propose, Proposal, ProposalRef}),
-  ProposalRef.
+  refs:with_ref(fun(ProposalRef) ->
+    propose(Proposal, ProposalRef, Topic)
+  end).
+
+propose(ProposalRef, Proposal, Topic) ->
+  gen_fsm:send_event(Topic, {propose, Proposal, ProposalRef}).
 
 vote_for(Elector, ProposalRef, Topic) ->
   gen_fsm:send_event(Topic, {vote_for, Elector, ProposalRef}).

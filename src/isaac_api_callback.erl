@@ -7,7 +7,6 @@
 handle(Req, _Args) ->
     handle(Req#req.method, elli_request:path(Req), Req).
 
-
 handle('GET',[<<"topics">>], _Req) ->
     {ok, [], <<"TODO: list topics">>};
 
