@@ -25,7 +25,7 @@ get_topic_status(TopicRef) ->
 
 start_topic(Spec) ->
   refs:with_ref(fun(TopicRef) ->
-    gen_server:cast(topics_server, {start_topic, TopicRef, Spec}, 500)
+    gen_server:cast(topics_server, {start_topic, TopicRef, Spec})
   end).
 
 start_topic_proposal(Proposal, TopicRef) ->
