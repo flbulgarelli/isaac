@@ -12,8 +12,10 @@
  %% subscribe_to_topic/2, unsubscribe_to_topic/2
 ]).
 
+-export([init/1, handle_call/3, handle_cast/2]).
+
 start_link() ->
-  gen_server:start_link(?MODULE, [], []).
+  gen_server:start_link({local, topics_server}, ?MODULE, [], []).
 
 list_topics() ->
   gen_server:call(topics_server, list_topics, 500).
@@ -31,8 +33,7 @@ start_topic_proposal(Proposal, TopicRef) ->
     gen_server:cast(topics_server, {start_topic_proposal, ProposalRef, Proposal, TopicRef}, 100)
   end).
 
-init([]) ->
-  register(topics_server, self()),
+init(_) ->
   {ok, #state{topics=dict:new()}}.
 
 handle_call(list_topics, _, S = #state{topics=Ts}) ->
