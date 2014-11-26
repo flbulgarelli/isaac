@@ -11,17 +11,16 @@
 %% Helper macro for declaring children of supervisor
 -define(CHILD(I, Type), {I, {I, start_link, []}, permanent, 5000, Type, [I]}).
 
-%% ===================================================================
-%% API functions
-%% ===================================================================
-
 start_link() ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
-%% ===================================================================
-%% Supervisor callbacks
-%% ===================================================================
-
 init([]) ->
-    {ok, { {one_for_one, 5, 10}, []} }.
-
+    ElliOpts = [{callback, isaac_api_callback}, {port, 4949}],
+    ElliSpec = {
+        fancy_http,
+        {elli, start_link, [ElliOpts]},
+        permanent,
+        5000,
+        worker,
+        [elli]},
+    {ok, { {one_for_one, 5, 10}, [ElliSpec]} }.
