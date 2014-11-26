@@ -1,0 +1,3 @@
+#!/bin/bash
+
+erl -detached -pa deps/*/ebin ebin -s isaac_app start
