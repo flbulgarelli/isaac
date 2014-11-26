@@ -1,7 +1,7 @@
 -module(topics_server).
 -behaviour(gen_server).
 
--record(state, {topics}).
+-record(state, {topics, proposal_counter, topic_counter}).
 
 -export([
   start_link/0,
@@ -12,7 +12,7 @@
  %% subscribe_to_topic/2, unsubscribe_to_topic/2
 ]).
 
--export([init/1, handle_call/3, handle_cast/2]).
+-export([init/1, handle_call/3  ]).
 
 start_link() ->
   gen_server:start_link({local, topics_server}, ?MODULE, [], []).
@@ -24,17 +24,13 @@ get_topic_status(TopicRef) ->
   gen_server:call(topics_server, {get_topic_status, TopicRef}, 500).
 
 start_topic(Spec) ->
-  refs:with_ref(fun(TopicRef) ->
-    gen_server:cast(topics_server, {start_topic, TopicRef, Spec})
-  end).
+  gen_server:call(topics_server, {start_topic, Spec}, 100).
 
 start_topic_proposal(Proposal, TopicRef) ->
-  refs:with_ref(fun(ProposalRef) ->
-    gen_server:cast(topics_server, {start_topic_proposal, ProposalRef, Proposal, TopicRef}, 100)
-  end).
+  gen_server:call(topics_server, {start_topic_proposal, Proposal, TopicRef}, 100).
 
 init(_) ->
-  {ok, #state{topics=dict:new()}}.
+  {ok, #state{topics=dict:new(), proposal_counter=0, topic_counter=0}}.
 
 handle_call(list_topics, _, S = #state{topics=Ts}) ->
   {reply, dict:fetch_keys(Ts), S};
@@ -43,18 +39,27 @@ handle_call({get_topic_status, TopicRef}, _, S) ->
   case find_topic(TopicRef, S) of
     {ok, Topic} -> {reply, simple_topic:satus(Topic), S};
     _ -> {reply, error, S}
-  end.
+  end;
 
-handle_cast({start_topic, TopicRef, Spec}, S = #state{topics=Ts}) ->
+handle_call({start_topic, Spec}, _, S = #state{topics=Ts}) ->
+  TopicRef = S#state.topic_counter + 1,
   Topic = simple_topic:start_link(Spec),
-  {noreply, S#state{topics = dict:store(TopicRef, Topic, Ts)}};
+  {reply, TopicRef, S#state{topic_counter = TopicRef, topics = dict:store(TopicRef, Topic, Ts)}};
 
-handle_cast({start_topic_proposal, ProposalRef, Proposal, TopicRef}, S) ->
+%%TODO reply as soon as  end
+handle_call({start_topic_proposal, Proposal, TopicRef}, _, S = #state{topics=Ts}) ->
+  ProposalRef = S#state.proposal_counter + 1,
   case find_topic(TopicRef, S) of
     {ok, Topic} -> simple_topic:propose(ProposalRef, Proposal, Topic);
     _ -> ok
   end,
-  {noreply, S}.
+  {reply, ProposalRef, S#state{proposal_counter=ProposalRef}}.
 
 find_topic(TopicRef, #state{topics=Ts}) ->
   dict:find(TopicRef, Ts).
+
+
+update_counter(Name, Ts) ->
+  Ts1 = dict:update_counter(Name, 1, Ts),
+  {dict:fetch(Name, Ts1), Ts1}.
+
