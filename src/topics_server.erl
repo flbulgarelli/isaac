@@ -55,5 +55,5 @@ handle_cast({start_topic_proposal, ProposalRef, Proposal, TopicRef}, S) ->
   end,
   {noreply, S}.
 
-find_topic(TopicRef, S = #state{topics=Ts}) ->
+find_topic(TopicRef, #state{topics=Ts}) ->
   dict:find(TopicRef, Ts).

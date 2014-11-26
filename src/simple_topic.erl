@@ -59,7 +59,7 @@ idle(M = {propose, _, ProposalRef}, {idle, Spec={_, Timeout}, Subs}) ->
 voting(status, _, S) ->
   {reply, voting, voting, S}.
 
-voting({vote_for, Elector, ProposalRef}, S = #voting{votes = Votes}) ->
+voting({vote_for, Elector, P}, S = #voting{votes = Votes, proposal_ref=P}) ->
   {next_state, voting, S#voting{votes = dict:store(Elector, 1, Votes)}};
 
 voting(timeout, {voting, Spec={MajorityModel, _}, Subscribers, ProposalRef, Votes}) ->
