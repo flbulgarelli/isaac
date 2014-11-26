@@ -8,21 +8,25 @@ handle(Req, _Args) ->
     handle(Req#req.method, elli_request:path(Req), Req).
 
 handle('GET',[<<"topics">>], _Req) ->
-    {ok, [], <<"TODO: list topics">>};
+    T = topics_server:list_topics(),
+    {ok, [], <<T>>};
 
 handle('POST',[<<"topics">>], _Req) ->
-    {ok, [], <<"TODO: create topic">>};
+    TopicRef = topics_server:start_topic({1000, majority:simple()}),
+    {ok, [], <<TopicRef>>};
 
-handle('GET',[<<"topics">>, TopicId], _Req) ->
-    {ok, [], <<"TODO: get topic status">>};
+handle('GET',[<<"topics">>, TopicRef], _Req) ->
+    Status = topics_server:get_topic_status(TopicRef),
+    {ok, [], <<Status>>};
 
-handle('POST',[<<"topics">>, TopicId, <<"proposals">>], _Req) ->
-    {ok, [], <<"TODO: create proposal">>};
+handle('POST',[<<"topics">>, TopicRef, <<"proposals">>], _Req) ->
+    ProposalRef = topics_server:start_topic_proposal({{"name", "Dummy proposal"}}, TopicRef),
+    {ok, [], <<ProposalRef>>};
 
-handle('POST',[<<"topics">>, TopicId, <<"subscribers">>], _Req) ->
+handle('POST',[<<"topics">>, TopicRef, <<"subscribers">>], _Req) ->
     {ok, [], <<"TODO: add subscriber">>};
 
-handle('DELETE',[<<"topics">>, TopicId, <<"subscribers">>, SubscriberId], _Req) ->
+handle('DELETE',[<<"topics">>, TopicRef, <<"subscribers">>, SubscriberId], _Req) ->
     {ok, [], <<"TODO: remove subscriber">>};
 
 
