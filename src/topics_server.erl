@@ -5,33 +5,34 @@
 
 -export([
   start_link/0,
-  list_topics/1,
-  start_topic/2,
-  get_topic_status/2,
-  start_topic_proposal/3
+  list_topics/0,
+  start_topic/1,
+  get_topic_status/1,
+  start_topic_proposal/2
  %% subscribe_to_topic/2, unsubscribe_to_topic/2
 ]).
 
 start_link() ->
   gen_server:start_link(?MODULE, [], []).
 
-list_topics(Server) ->
-  gen_server:call(Server, list_topics, 500).
+list_topics() ->
+  gen_server:call(topics_server, list_topics, 500).
 
-get_topic_status(TopicRef, Server) ->
-  gen_server:call(Server, {get_topic_status, TopicRef}, 500).
+get_topic_status(TopicRef) ->
+  gen_server:call(topics_server, {get_topic_status, TopicRef}, 500).
 
-start_topic(Spec, Server) ->
+start_topic(Spec) ->
   refs:with_ref(fun(TopicRef) ->
-    gen_server:cast(Server, {start_topic, TopicRef, Spec}, 500)
+    gen_server:cast(topics_server, {start_topic, TopicRef, Spec}, 500)
   end).
 
-start_topic_proposal(Proposal, TopicRef, Server) ->
-  refs:with_ref(fun(ProposalRef, TopicRef) ->
-    gen_server:cast(Server, {start_topic_proposal, ProposalRef, Proposal, TopicRef}, 100)
+start_topic_proposal(Proposal, TopicRef) ->
+  refs:with_ref(fun(ProposalRef) ->
+    gen_server:cast(topics_server, {start_topic_proposal, ProposalRef, Proposal, TopicRef}, 100)
   end).
 
 init([]) ->
+  register(topics_server, self()),
   {ok, #state{topics=dict:new()}}.
 
 handle_call(list_topics, _, S = #state{topics=Ts}) ->
