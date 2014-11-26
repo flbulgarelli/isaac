@@ -9,19 +9,29 @@ handle(Req, _Args) ->
 
 handle('GET',[<<"topics">>], _Req) ->
     T = topics_server:list_topics(),
-    {ok, [], <<T>>};
+    {ok, [], jiffy:encode({[
+      {topic_ids, T}
+    ]})};
 
 handle('POST',[<<"topics">>], _Req) ->
     TopicRef = topics_server:start_topic({1000, majority:simple()}),
-    {ok, [], <<TopicRef>>};
+    {ok, [], jiffy:encode({[
+      {topic_id, TopicRef}
+    ]})};
 
 handle('GET',[<<"topics">>, TopicRef], _Req) ->
     Status = topics_server:get_topic_status(TopicRef),
-    {ok, [], <<Status>>};
+    {ok, [], jiffy:encode({[
+      {topic_id, TopicRef},
+      {status, Status}
+    ]})};
 
 handle('POST',[<<"topics">>, TopicRef, <<"proposals">>], _Req) ->
     ProposalRef = topics_server:start_topic_proposal({{"name", "Dummy proposal"}}, TopicRef),
-    {ok, [], <<ProposalRef>>};
+    {ok, [], jiffy:encode({[
+      {topic_id, TopicRef},
+      {proposal_id, ProposalRef}
+    ]})};
 
 handle('POST',[<<"topics">>, TopicRef, <<"subscribers">>], _Req) ->
     {ok, [], <<"TODO: add subscriber">>};
