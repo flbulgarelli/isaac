@@ -24,7 +24,7 @@
 %%
 %% ----------------------------------------------------------------------------
 
--module(oauth2_example_backend).
+-module(oauth2_ets_backend).
 
 -behavior(oauth2_backend).
 

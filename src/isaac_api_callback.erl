@@ -5,7 +5,11 @@
 -behaviour(elli_handler).
 
 handle(Req, _Args) ->
-    handle(Req#req.method, elli_request:path(Req), Req).
+    case is_authorized(Req) of
+      true  -> handle(Req#req.method, elli_request:path(Req), Req);
+      false -> {401, [], <<>>}
+    end.
+
 
 handle('GET',[<<"topics">>], _Req) ->
     T = topics_server:list_topics(),
@@ -55,3 +59,26 @@ handle(_, _, _Req) ->
 
 handle_event(_Event, _Data, _Args) ->
     ok.
+
+is_authorized(Req) ->
+    case get_access_token(Req) of
+        {ok, Token} ->
+            case oauth2:verify_access_token(Token, []) of
+                {ok, _Identity} -> true;
+                {error, access_denied} -> false
+            end;
+        {error, _} -> false
+    end.
+
+get_access_token(Req) ->
+    case elli:header(<<"authorization">>, Req) of
+        {<<"Bearer ", Token/binary>>, _Req} ->
+            {ok, Token};
+        _ ->
+            case elli:qs_val(<<"access_token">>, Req) of
+                {Token, _Req} ->
+                    {ok, Token};
+                _ ->
+                    {error, missing}
+            end
+    end.
